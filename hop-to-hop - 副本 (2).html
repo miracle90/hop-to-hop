@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>three.js实现跳一跳</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      /* 隐藏body窗口区域滚动条 */
+    }
+  </style>
+</head>
+
+<body>
+  <!--引入three.js三维引擎-->
+  <script src="http://www.yanhuangxueyuan.com/versions/threejsR92/build/three.js"></script>
+  <script>
+    // 初始化一个场景，只会有一个
+    let scene = new THREE.Scene()
+
+    // 相机 => 角度，宽高比例，距离
+    let camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1000)
+    
+    // 相机位置
+    camera.position.x = 5
+    camera.position.y = 3
+    camera.position.z = 10
+    
+    // 几何体，高度为2，长宽4*4的长方体
+    let geometry = new THREE.CubeGeometry(4, 2, 4)
+
+    // 材质
+    let material = new THREE.MeshLambertMaterial({ color: 0xbebebe })
+    let cube = new THREE.Mesh(geometry, material)
+    cube.position.set(0, -1, 0)
+    scene.add(cube)
+
+    // 设置一道平行光，颜色，强度
+    let directionalLight = new THREE.DirectionalLight(0xffffff, 1.1)
+    directionalLight.position.set(5, 10, 3)
+    // 基础材质对光照没有反应
+    scene.add(directionalLight)
+
+    // 辅助三维坐标系AxisHelper
+    let axisHelper = new THREE.AxisHelper(5);
+    scene.add(axisHelper);
+
+    // 渲染器
+    let renderer = new THREE.WebGLRenderer()
+    // 设置清屏颜色
+    renderer.setClearColor(0xffffff)
+    // 设置canvas宽高，全屏
+    renderer.setSize(window.innerWidth, window.innerHeight)
+    // renderer.domElement => canvas画布
+    document.body.appendChild(renderer.domElement)
+    // renderer.render(scene, camera)
+
+    let x = 3
+    function render() {
+      x -= 0.1
+      camera.position.x = x
+      renderer.render(scene, camera)
+      if (x > -8) {
+        requestAnimationFrame(render)
+      }
+    }
+    render()
+  </script>
+</body>
+</html>
