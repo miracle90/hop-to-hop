@@ -211,15 +211,19 @@ class Game {
 		if (dir === 'leftTop') {
 			rotate += 0.1
 			isRotate = this.jumper.rotation[axis] < Math.PI / 2
+			console.log(isRotate)
 		} else if (dir === 'leftBottom') {
 			rotate -= 0.1
-			isRotate = this.jumper.rotation[axis] < -Math.PI / 2
+			isRotate = this.jumper.rotation[axis] > -Math.PI / 2
+			console.log(isRotate)
 		} else if (dir === 'rightTop') {
 			rotate -= 0.1
-			isRotate = this.jumper.rotation[axis] < -Math.PI / 2
+			isRotate = this.jumper.rotation[axis] > -Math.PI / 2
+			console.log(isRotate)
 		} else if (dir === 'rightBottom') {
 			rotate += 0.1
 			isRotate = this.jumper.rotation[axis] < Math.PI / 2
+			console.log(isRotate)
 		} else if (dir === 'none') {
 			fallingTo = this.config.ground
 			isRotate = false
