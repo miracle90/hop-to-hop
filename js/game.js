@@ -33,6 +33,7 @@ class Game {
 		this.cubeStat = {
 			nextDir: ''
 		}
+		// 落后的状态
 		this.falledStat = {
 			// 默认落在当前块上
 			location: -1,
@@ -92,7 +93,7 @@ class Game {
 	}
 
 	_handleMouseDown() {
-		if (!this.jumperStat.ready) {
+		if (!this.jumperStat.ready && this.jumper.scale.y > 0.02) {
 			// y方向，压缩当前块
 			this.jumper.scale.y -= 0.01
 			this.jumperStat.xSpeed += 0.004
@@ -301,7 +302,6 @@ class Game {
 			x: this.cubes[lastIndex].position.x,
 			z: this.cubes[lastIndex].position.z
 		}
-
 		this.cameraPos.next = new THREE.Vector3((pointA.x + pointB.x) / 2, 0, (pointA.z + pointB.z) / 2)
 	}
 
