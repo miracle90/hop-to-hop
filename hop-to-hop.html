@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>three.js实现跳一跳</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      /* 隐藏body窗口区域滚动条 */
+    }
+  </style>
+  
+</head>
+
+<body>
+  <!--引入three.js三维引擎-->
+  <script src="http://www.yanhuangxueyuan.com/versions/threejsR92/build/three.js"></script>
+  <script>
+    console.log(THREE)
+    // 场景
+    let scene = new THREE.Scene()
+    // 相机 => 角度，宽高比例，距离
+    let camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 5000)
+    
+  </script>
+</body>
+</html>
