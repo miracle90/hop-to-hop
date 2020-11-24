@@ -24,7 +24,7 @@ class Game {
 		this.camera = new THREE.OrthographicCamera(window.innerWidth / -50, window.innerWidth / 50, window.innerHeight / 50, window.innerHeight / -50, 0, 5000)
 		// 相机的位置
 		this.cameraPos = {
-			curent: new THREE.Vector3(0, 0, 0),
+			current: new THREE.Vector3(0, 0, 0),
 			next: new THREE.Vector3()
 		}
 		// 方块
@@ -54,7 +54,7 @@ class Game {
 	}
 
 	init() {
-		this._addAxisHelp()
+		// this._addAxisHelp()
 		this._setCamera()
 		this._setRenderer()
 		this._setLight()
@@ -74,6 +74,14 @@ class Game {
 		canvas.addEventListener('mouseup', () => {
 			this._handleMouseUp()
 		})
+	}
+
+	_addSuccessFn(fn) {
+		this.successCallback = fn
+	}
+
+	_addFailedFn(fn) {
+		this.failedCallback = fn
 	}
 
 	_addAxisHelp() {
@@ -129,13 +137,18 @@ class Game {
 			// 恢复默认值
 			this.jumper.scale.y = 1
 			this.jumper.position.y = 1
-			this.jumper.xSpeed = 0
-			this.jumper.ySpeed = 0
+			this.jumperStat.xSpeed = 0
+			this.jumperStat.ySpeed = 0
 			// 检测落在哪里了
 			this._checkInCube()
 			if (this.falledStat.location === 1) {
 				// 如果成功了
 				this.score++
+				this._createCube()
+				this._updateCamera()
+				if (this.successCallback) {
+					this.successCallback(this.score)
+				}
 			} else {
 				// 失败
 				this._falling()
@@ -240,6 +253,10 @@ class Game {
 			requestAnimationFrame(() => {
 				this._falling()
 			})
+		} else {
+			if (this.failedCallback) {
+				this.failedCallback()
+			}
 		}
 	}
 
@@ -247,7 +264,7 @@ class Game {
 	_setCamera() {
 		this.camera.position.set(100, 100, 100)
 		// 对准镜头
-		this.camera.lookAt(this.cameraPos.curent)
+		this.camera.lookAt(this.cameraPos.current)
 	}
 
 	// 设置render
@@ -265,12 +282,16 @@ class Game {
 		if (this.cubes.length) {
 			// 随机一个方向 left x轴的负方向 right z轴
 			this.cubeStat.nextDir = Math.random() > 0.5 ? 'left' : 'right'
+			console.log(this.cubeStat.nextDir)
+			cube.position.x = this.cubes[this.cubes.length - 1].position.x
+			cube.position.y = this.cubes[this.cubes.length - 1].position.y
+			cube.position.z = this.cubes[this.cubes.length - 1].position.z
 			if (this.cubeStat.nextDir === 'left') {
 				// 改变x轴
-				cube.position.x = this.cubes[this.cubes.length - 1].position.x - Math.random() * 4 - 6
+				cube.position.x -= Math.random() * 4 + 6
 			} else {
 				// 改变z轴
-				cube.position.z = this.cubes[this.cubes.length - 1].position.z - Math.random() * 4 - 6
+				cube.position.z -= Math.random() * 4 + 6
 			}
 		}
 		this.cubes.push(cube)
@@ -311,14 +332,19 @@ class Game {
 
 	// 改变相机的镜头
 	_updateCamera() {
-		if (this.cameraPos.curent.x > this.cameraPos.next.x || this.cameraPos.curent.z > this.cameraPos.next.z) {
+		if (this.cameraPos.current.x > this.cameraPos.next.x || this.cameraPos.current.z > this.cameraPos.next.z) {
 			if (this.cubeStat.nextDir === 'left') {
-				this.cameraPos.curent.x -= 0.1
+				this.cameraPos.current.x -= 0.2
 			} else {
-				this.cameraPos.curent.z -= 0.1
+				this.cameraPos.current.z -= 0.2
+			}
+			if (this.cameraPos.current.x - this.cameraPos.next.x < 0.05) {
+				this.cameraPos.current.x = this.cameraPos.next.x
+			} else if (this.cameraPos.current.z - this.cameraPos.next.z < 0.05) {
+				this.cameraPos.current.z = this.cameraPos.next.z
 			}
 
-			this.camera.lookAt(this.cameraPos.curent)
+			this.camera.lookAt(this.cameraPos.current)
 			this._render()
 			requestAnimationFrame(() => {
 				this._updateCamera()
@@ -347,5 +373,27 @@ class Game {
 			width: window.innerWidth,
 			height: window.innerHeight
 		}
+	}
+
+	_restart() {
+		// 重置
+		this.score = 0
+		this.falledStat = {
+			location: -1,
+			distance: 0
+		}
+		this.cameraPos = {
+			current: new THREE.Vector3(0, 0, 0),
+			next: new THREE.Vector3(0, 0, 0)
+		}
+		// 删除场景中的几何体
+		this.scene.remove(this.jumper)
+		this.cubes.forEach(cube => this.scene.remove(cube))
+		this.cubes = []
+		// 重新开始
+		this._createCube()
+		this._createCube()
+		this._createJumper()
+		this._updateCamera()
 	}
 }
