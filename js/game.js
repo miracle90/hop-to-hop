@@ -1,6 +1,6 @@
 class Game {
 	constructor() {
-		// 基础信息
+		// 基础信息配置
 		this.config = {
 			background: 0x282828,
 			ground: -1,
@@ -13,27 +13,29 @@ class Game {
 			jumperHeight: 2,
 			jumperDeep: 1
 		}
-		this.score = 0
-		this.scene = new THREE.Scene()
-		this.renderer = new THREE.WebGLRenderer({ antialias: true })
 		this.size = {
 			width: window.innerWidth,
 			height: window.innerHeight
 		}
-		// 正交相机
+		this.score = 0
+		// 新建一个场景
+		this.scene = new THREE.Scene()
+		// 新建一个渲染器
+		this.renderer = new THREE.WebGLRenderer({ antialias: true })
+		// 新建一个正交相机，不需要近大远小的效果
 		this.camera = new THREE.OrthographicCamera(window.innerWidth / -50, window.innerWidth / 50, window.innerHeight / 50, window.innerHeight / -50, 0, 5000)
 		// 相机的位置
 		this.cameraPos = {
 			current: new THREE.Vector3(0, 0, 0),
 			next: new THREE.Vector3()
 		}
-		// 方块
+		// 方块的集合
 		this.cubes = []
-		// 方块左边 or 右边
+		// 随机生成的方块方向，left，right
 		this.cubeStat = {
-			nextDir: ''
+			nextDirection: ''
 		}
-		// 落后的状态
+		// jumper下落后的状态
 		this.falledStat = {
 			// 默认落在当前块上
 			location: -1,
@@ -52,9 +54,8 @@ class Game {
 			ySpeed: 0
 		}
 	}
-
 	init() {
-		// this._addAxisHelp()
+		this._addAxisHelp()
 		this._setCamera()
 		this._setRenderer()
 		this._setLight()
@@ -75,20 +76,16 @@ class Game {
 			this._handleMouseUp()
 		})
 	}
-
 	_addSuccessFn(fn) {
 		this.successCallback = fn
 	}
-
 	_addFailedFn(fn) {
 		this.failedCallback = fn
 	}
-
 	_addAxisHelp() {
 		let axis = new THREE.AxisHelper(20)
 		this.scene.add(axis)
 	}
-
 	_handleWindowResize() {
 		this._setSize()
 		this.camera.left = this.size.width / -50
@@ -99,7 +96,6 @@ class Game {
 		this.renderer.setSize(this.size.width, this.size.height)
 		this._render()
 	}
-
 	_handleMouseDown() {
 		if (!this.jumperStat.ready && this.jumper.scale.y > 0.02) {
 			// y方向，压缩当前块
@@ -112,7 +108,6 @@ class Game {
 			})
 		}
 	}
-
 	_handleMouseUp() {
 		this.jumperStat.ready = true
 		// >= 1还在空中，没有结束跳跃过程
@@ -121,7 +116,7 @@ class Game {
 				this.jumper.scale.y += 0.1
 			}
 			// 如果往左边跑
-			if (this.cubeStat.nextDir === 'left') {
+			if (this.cubeStat.nextDirection === 'left') {
 				this.jumper.position.x -= this.jumperStat.xSpeed
 			} else {
 				this.jumper.position.z -= this.jumperStat.xSpeed
@@ -155,7 +150,6 @@ class Game {
 			}
 		}
 	}
-
 	_checkInCube() {
 		// -1：当前盒子
 		// -10：当前盒子上滑下去
@@ -164,7 +158,7 @@ class Game {
 		// 0：没有落在盒子上
 		let distanceCur, distanceNext
 		let should = (this.config.cubeWidth + this.config.jumperWidth) / 2
-		if (this.cubeStat.nextDir === 'left') {
+		if (this.cubeStat.nextDirection === 'left') {
 			distanceCur = Math.abs(this.cubes[this.cubes.length - 2].position.x - this.jumper.position.x)
 			distanceNext = Math.abs(this.cubes[this.cubes.length - 1].position.x - this.jumper.position.x)
 		} else {
@@ -183,14 +177,13 @@ class Game {
 			this.falledStat.location = 0
 		}
 	}
-
 	_falling() {
 		// -10，10，0
 		// -10从当前盒子落下，左前或者右前方 leftTop rightTop
 		// 10从下一个盒子落下 leftTop leftBottom rightTop rightBottom
 		// 0 none
 		if (this.falledStat.location === 10) {
-			if (this.cubeStat.nextDir === 'left') {
+			if (this.cubeStat.nextDirection === 'left') {
 				if (this.jumper.position.x > this.cubes[this.cubes.length - 1].position.x) {
 					this._fallingDir('leftBottom')
 				} else {
@@ -204,7 +197,7 @@ class Game {
 				}
 			}
 		} else if (this.falledStat.location === -10) {
-			if (this.cubeStat.nextDir === 'left') {
+			if (this.cubeStat.nextDirection === 'left') {
 				this._fallingDir('leftTop')
 			} else {
 				this._fallingDir('rightTop')
@@ -213,7 +206,6 @@ class Game {
 			this._fallingDir('none')
 		}
 	}
-
 	_fallingDir(dir) {
 		console.log(dir)
 		let offset = this.falledStat.distance - this.config.cubeWidth / 2
@@ -224,19 +216,15 @@ class Game {
 		if (dir === 'leftTop') {
 			rotate += 0.1
 			isRotate = this.jumper.rotation[axis] < Math.PI / 2
-			console.log(isRotate)
 		} else if (dir === 'leftBottom') {
 			rotate -= 0.1
 			isRotate = this.jumper.rotation[axis] > -Math.PI / 2
-			console.log(isRotate)
 		} else if (dir === 'rightTop') {
 			rotate -= 0.1
 			isRotate = this.jumper.rotation[axis] > -Math.PI / 2
-			console.log(isRotate)
 		} else if (dir === 'rightBottom') {
 			rotate += 0.1
 			isRotate = this.jumper.rotation[axis] < Math.PI / 2
-			console.log(isRotate)
 		} else if (dir === 'none') {
 			fallingTo = this.config.ground
 			isRotate = false
@@ -256,37 +244,41 @@ class Game {
 		} else {
 			if (this.failedCallback) {
 				this.failedCallback()
+				// setTimeout(() => {
+				// 	this.failedCallback()
+ 				// }, 800)
 			}
 		}
 	}
-
-	// 设置相机位置
+	// 设置相机位置和朝向
 	_setCamera() {
+		// 设置相机位置
 		this.camera.position.set(100, 100, 100)
-		// 对准镜头
+		// 设置相机方向
 		this.camera.lookAt(this.cameraPos.current)
 	}
-
 	// 设置render
 	_setRenderer() {
 		this.renderer.setSize(this.size.width, this.size.height)
 		this.renderer.setClearColor(this.config.background)
 		document.body.appendChild(this.renderer.domElement)
 	}
-
 	// 创建cube
 	_createCube() {
+		// 几何体
 		let geometry = new THREE.CubeGeometry(this.config.cubeWidth, this.config.cubeHeight, this.config.cubeDeep)
+		// 材质 => 反光材质
 		let material = new THREE.MeshLambertMaterial({ color: this.config.cubeColor })
+		// 网格模型 = 几何体 + 材质
 		let cube = new THREE.Mesh(geometry, material)
 		if (this.cubes.length) {
-			// 随机一个方向 left x轴的负方向 right z轴
-			this.cubeStat.nextDir = Math.random() > 0.5 ? 'left' : 'right'
-			console.log(this.cubeStat.nextDir)
+			// 随机一个方向生成cube
+			this.cubeStat.nextDirection = Math.random() > 0.5 ? 'left' : 'right'
 			cube.position.x = this.cubes[this.cubes.length - 1].position.x
 			cube.position.y = this.cubes[this.cubes.length - 1].position.y
 			cube.position.z = this.cubes[this.cubes.length - 1].position.z
-			if (this.cubeStat.nextDir === 'left') {
+			// left x轴的负方向 right z轴负方向
+			if (this.cubeStat.nextDirection === 'left') {
 				// 改变x轴
 				cube.position.x -= Math.random() * 4 + 6
 			} else {
@@ -314,7 +306,6 @@ class Game {
 		this.jumper.position.y = 1
 		this.scene.add(this.jumper)
 	}
-
 	// 更新镜头的位置
 	_updateCameraPos() {
 		// 计算出next，镜头对准最后两个块的最中间，数组的倒数第二个和最后一个
@@ -329,11 +320,10 @@ class Game {
 		}
 		this.cameraPos.next = new THREE.Vector3((pointA.x + pointB.x) / 2, 0, (pointA.z + pointB.z) / 2)
 	}
-
 	// 改变相机的镜头
 	_updateCamera() {
 		if (this.cameraPos.current.x > this.cameraPos.next.x || this.cameraPos.current.z > this.cameraPos.next.z) {
-			if (this.cubeStat.nextDir === 'left') {
+			if (this.cubeStat.nextDirection === 'left') {
 				this.cameraPos.current.x -= 0.2
 			} else {
 				this.cameraPos.current.z -= 0.2
@@ -351,22 +341,23 @@ class Game {
 			})
 		}
 	}
-
 	// 设置灯光
 	_setLight() {
+		// 添加平行光，类似太阳光
 		let directionalLight = new THREE.DirectionalLight(0xffffff, 1.1)
+		// 设置位置
 		directionalLight.position.set(3, 10, 5)
+		// add到场景中
 		this.scene.add(directionalLight)
-		// 全景光，增加亮度
+		// 添加环境光，增加亮度
 		let light = new THREE.AmbientLight(0xffffff, 0.3)
+		// add到场景中
 		this.scene.add(light)
 	}
-
 	// 渲染 
 	_render() {
 		this.renderer.render(this.scene, this.camera)
 	}
-
 	// 设置size
 	_setSize() {
 		this.size = {
@@ -374,7 +365,6 @@ class Game {
 			height: window.innerHeight
 		}
 	}
-
 	_restart() {
 		// 重置
 		this.score = 0
