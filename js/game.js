@@ -97,9 +97,11 @@ class Game {
 		this._render()
 	}
 	_handleMouseDown() {
+		// 如果可点击，并且还未到极限位置
 		if (!this.jumperStat.ready && this.jumper.scale.y > 0.02) {
 			// y方向，压缩当前块
 			this.jumper.scale.y -= 0.01
+			// 积蓄速度，x，y方向的速度
 			this.jumperStat.xSpeed += 0.004
 			this.jumperStat.ySpeed += 0.008
 			this._render()
@@ -109,25 +111,31 @@ class Game {
 		}
 	}
 	_handleMouseUp() {
+		// 跳跃过程，不可点击
 		this.jumperStat.ready = true
 		// >= 1还在空中，没有结束跳跃过程
 		if (this.jumper.position.y >= 1) {
+			// jumper的压缩状态逐渐恢复
 			if (this.jumper.scale.y < 1) {
 				this.jumper.scale.y += 0.1
 			}
-			// 如果往左边跑
 			if (this.cubeStat.nextDirection === 'left') {
+				// 如果往左边跳，x减小
 				this.jumper.position.x -= this.jumperStat.xSpeed
 			} else {
+				// 如果往左边跳，z减小
 				this.jumper.position.z -= this.jumperStat.xSpeed
 			}
+			// y轴方向，速度不断减小，正数 => 0 => 负数
 			this.jumperStat.ySpeed -= 0.01
+			// 改变jumper的高度值
 			this.jumper.position.y += this.jumperStat.ySpeed
 			this._render()
 			requestAnimationFrame(() => {
 				this._handleMouseUp()
 			})
 		} else {
+			// 跳跃结束，恢复可点击
 			this.jumperStat.ready = false
 			// 恢复默认值
 			this.jumper.scale.y = 1
@@ -139,19 +147,23 @@ class Game {
 			if (this.falledStat.location === 1) {
 				// 如果成功了
 				this.score++
+				// 创建下一个方块
 				this._createCube()
+				// 更新相机lookAt
 				this._updateCamera()
 				if (this.successCallback) {
+					// 成功跳跃，计算分数
 					this.successCallback(this.score)
 				}
 			} else {
-				// 失败
+				// 失败，执行滚动动画
 				this._falling()
 			}
 		}
 	}
+	// 检测落在哪里了
 	_checkInCube() {
-		// -1：当前盒子
+		// -1：还在当前方块上
 		// -10：当前盒子上滑下去
 		// 1：跳到下一个盒子
 		// 10：从下一个盒子上掉落
@@ -159,40 +171,48 @@ class Game {
 		let distanceCur, distanceNext
 		let should = (this.config.cubeWidth + this.config.jumperWidth) / 2
 		if (this.cubeStat.nextDirection === 'left') {
+			// jumper和当前方块的中心点的距离
 			distanceCur = Math.abs(this.cubes[this.cubes.length - 2].position.x - this.jumper.position.x)
+			// jumper和要跳的方块的中心点的距离
 			distanceNext = Math.abs(this.cubes[this.cubes.length - 1].position.x - this.jumper.position.x)
 		} else {
+			// jumper和当前方块的中心点的距离
 			distanceCur = Math.abs(this.cubes[this.cubes.length - 2].position.z - this.jumper.position.z)
+			// jumper和要跳的方块的中心点的距离
 			distanceNext = Math.abs(this.cubes[this.cubes.length - 1].position.z - this.jumper.position.z)
 		}
 
 		if (distanceCur < should) {
-			// 落在当前块
+			// 落在当前块 or 从当前方块滑落
 			this.falledStat.location = distanceCur < this.config.cubeWidth / 2 ? -1 : -10
 		} else if (distanceNext < should) {
-			// 落在下一个块
+			// 落在下一个方块 or 从下一个方块滑落
 			this.falledStat.location = distanceNext < this.config.cubeWidth / 2 ? 1 : 10
 		} else {
 			// 没有落在块上
 			this.falledStat.location = 0
 		}
 	}
+	// 失败动画入口
 	_falling() {
-		// -10，10，0
-		// -10从当前盒子落下，左前或者右前方 leftTop rightTop
-		// 10从下一个盒子落下 leftTop leftBottom rightTop rightBottom
-		// 0 none
+		// -10从当前方块落下，左前或者右前方 => leftTop rightTop
+		// 10从下一个方块落下，分从方块前或后滑落 => leftTop leftBottom rightTop rightBottom
+		// 0 只做下落，不做滚动
 		if (this.falledStat.location === 10) {
 			if (this.cubeStat.nextDirection === 'left') {
 				if (this.jumper.position.x > this.cubes[this.cubes.length - 1].position.x) {
+					// 距离没够
 					this._fallingDir('leftBottom')
 				} else {
+					// 距离过了
 					this._fallingDir('leftTop')
 				}
 			} else {
 				if (this.jumper.position.z > this.cubes[this.cubes.length - 1].position.z) {
+					// 距离没够
 					this._fallingDir('rightBottom')
 				} else {
+					// 距离过了
 					this._fallingDir('rightTop')
 				}
 			}
@@ -206,15 +226,19 @@ class Game {
 			this._fallingDir('none')
 		}
 	}
+	// 失败动画处理
 	_fallingDir(dir) {
-		console.log(dir)
-		let offset = this.falledStat.distance - this.config.cubeWidth / 2
+		// let offset = this.falledStat.distance - this.config.cubeWidth / 2
 		let isRotate = true
+		// 往左跳，绕着z轴旋转，往右跳，绕着x轴旋转
 		let axis = dir.includes('left') ? 'z' : 'x'
+		// rotation 模型角度属性
 		let rotate = this.jumper.rotation[axis]
+		// 下落高度
 		let fallingTo = this.config.ground + this.config.jumperWidth / 2
 		if (dir === 'leftTop') {
 			rotate += 0.1
+			// 旋转90度
 			isRotate = this.jumper.rotation[axis] < Math.PI / 2
 		} else if (dir === 'leftBottom') {
 			rotate -= 0.1
@@ -226,6 +250,7 @@ class Game {
 			rotate += 0.1
 			isRotate = this.jumper.rotation[axis] < Math.PI / 2
 		} else if (dir === 'none') {
+			// 下落-1
 			fallingTo = this.config.ground
 			isRotate = false
 		}
@@ -233,6 +258,7 @@ class Game {
 			if (isRotate) {
 				this.jumper.rotation[axis] = rotate
 			} else if (this.jumper.position.y > fallingTo) {
+				// 下落速度
 				this.jumper.position.y -= this.fallingStat.speed
 			} else {
 				this.fallingStat.end = true
@@ -242,11 +268,9 @@ class Game {
 				this._falling()
 			})
 		} else {
+			// 动画结束，显示失败弹窗
 			if (this.failedCallback) {
 				this.failedCallback()
-				// setTimeout(() => {
-				// 	this.failedCallback()
- 				// }, 800)
 			}
 		}
 	}
@@ -257,10 +281,13 @@ class Game {
 		// 设置相机方向
 		this.camera.lookAt(this.cameraPos.current)
 	}
-	// 设置render
+	// 设置渲染器
 	_setRenderer() {
+		// 设置画布大小
 		this.renderer.setSize(this.size.width, this.size.height)
+		// 设置画布背景颜色
 		this.renderer.setClearColor(this.config.background)
+		//将画布追加到html文档中
 		document.body.appendChild(this.renderer.domElement)
 	}
 	// 创建cube
@@ -318,24 +345,30 @@ class Game {
 			x: this.cubes[lastIndex].position.x,
 			z: this.cubes[lastIndex].position.z
 		}
+		// Vector3 三维向量
 		this.cameraPos.next = new THREE.Vector3((pointA.x + pointB.x) / 2, 0, (pointA.z + pointB.z) / 2)
 	}
-	// 改变相机的镜头
+	// 改变相机的镜头，随着游戏进行，需要不断改变镜头聚焦位置，类似于聚光灯
 	_updateCamera() {
+		// 镜头还未移动到位
 		if (this.cameraPos.current.x > this.cameraPos.next.x || this.cameraPos.current.z > this.cameraPos.next.z) {
 			if (this.cubeStat.nextDirection === 'left') {
+				// 如果左边生成，向左移动
 				this.cameraPos.current.x -= 0.2
 			} else {
+				// 如果右边生成，向右移动
 				this.cameraPos.current.z -= 0.2
 			}
+			// 小于0.05，直接一步到位
 			if (this.cameraPos.current.x - this.cameraPos.next.x < 0.05) {
 				this.cameraPos.current.x = this.cameraPos.next.x
 			} else if (this.cameraPos.current.z - this.cameraPos.next.z < 0.05) {
 				this.cameraPos.current.z = this.cameraPos.next.z
 			}
-
+			// 镜头对准current
 			this.camera.lookAt(this.cameraPos.current)
 			this._render()
+			// 帧动画
 			requestAnimationFrame(() => {
 				this._updateCamera()
 			})
@@ -368,16 +401,16 @@ class Game {
 	_restart() {
 		// 重置
 		this.score = 0
-		this.falledStat = {
-			location: -1,
-			distance: 0
-		}
+		this.falledStat.location = -1
+		this.fallingStat.end = false
+		// 重置相机
 		this.cameraPos = {
 			current: new THREE.Vector3(0, 0, 0),
 			next: new THREE.Vector3(0, 0, 0)
 		}
 		// 删除场景中的几何体
 		this.scene.remove(this.jumper)
+		// 循环remove
 		this.cubes.forEach(cube => this.scene.remove(cube))
 		this.cubes = []
 		// 重新开始
